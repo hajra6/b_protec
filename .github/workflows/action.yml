@@ -1,10 +1,14 @@
 name: Check for New Repositories
 
-# Schedule to run daily and allow manual trigger
 on:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight UTC
   workflow_dispatch: # Allows manual triggering
+
+permissions:
+  contents: read # Permissions to read the repository contents
+  actions: read   # Permissions to read actions
+  repository: read # Permissions to read repository details
 
 jobs:
   check-new-repos:
@@ -17,21 +21,18 @@ jobs:
           # Calculate the date 24 hours ago in ISO format
           DATE_24H=$(date -u -d '24 hours ago' +'%Y-%m-%dT%H:%M:%SZ')
           echo "DATE_24H=${DATE_24H}" >> $GITHUB_ENV
+          echo "Calculated date is: $DATE_24H"
 
       - name: List Repositories Created in the Last 24 Hours
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use the default token
         run: |
-          # Use the GitHub API to list repositories
-          new_repos=$(gh api /user/repos --paginate --jq ".[] | select(.created_at > env.DATE_24H) | .name")
+          echo "Fetching repositories created in the last 24 hours..."
           
-          # Check if the API call was successful
-          if [ $? -ne 0 ]; then
-            echo "Failed to fetch repositories. Please check the GitHub API access."
-            exit 1
-          fi
-          
-          # Output the results
+          # Fetch repositories created in the last 24 hours
+          new_repos=$(gh api /user/repos --paginate --jq ".[] | select(.created_at > \"$DATE_24H\") | .name")
+
+          # Check if new_repos variable is empty or not
           if [ -z "$new_repos" ]; then
             echo "No new repositories created in the last 24 hours."
           else
