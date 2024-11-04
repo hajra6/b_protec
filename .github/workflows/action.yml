@@ -1,0 +1,32 @@
+name: Check for New Repositories
+
+# Schedule to run daily and allow manual trigger
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs every day at midnight UTC
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  check-new-repos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up date filter for 24 hours ago
+        id: date
+        run: |
+          # Calculate the date 24 hours ago in ISO format
+          echo "DATE_24H=$(date -u -d '24 hours ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+
+      - name: List Repositories Created in the Last 24 Hours
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # List all repositories and filter those created in the last 24 hours
+          new_repos=$(gh api /user/repos --paginate --jq ".[] | select(.created_at > env.DATE_24H) | .name")
+
+          if [ -z "$new_repos" ]; then
+            echo "No new repositories created in the last 24 hours."
+          else
+            echo "Repositories created in the last 24 hours:"
+            echo "$new_repos"
+          fi
