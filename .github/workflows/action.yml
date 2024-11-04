@@ -1,10 +1,9 @@
 name: Check for New Repositories
 
-# Schedule to run daily and allow manual trigger
+# Run this workflow daily
 on:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight UTC
-  workflow_dispatch: # Allows manual triggering
 
 jobs:
   check-new-repos:
